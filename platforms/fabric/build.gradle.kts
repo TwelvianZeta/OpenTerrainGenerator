@@ -1,15 +1,15 @@
 plugins {
     id("platform-conventions")
-    id("fabric-loom") version "0.9-SNAPSHOT"
+    id("fabric-loom") version "0.10-SNAPSHOT"
 }
 
 dependencies {
     minecraft("com.mojang:minecraft:1.17.1")
     mappings(loom.officialMojangMappings())
-    modImplementation("net.fabricmc:fabric-loader:0.11.6")
+    modImplementation("net.fabricmc:fabric-loader:0.12.12")
 
     // Fabric API. This is technically optional, but you probably want it anyway.
-    modImplementation("net.fabricmc.fabric-api:fabric-api:0.37.0+1.17")
+    modImplementation("net.fabricmc.fabric-api:fabric-api:0.45.0+1.17")
 
     implementation(project(":common:common-core"))
 }
