@@ -7,7 +7,7 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.Tag;
 import net.minecraft.world.level.block.Block;
 
-public class PaperMaterialTag extends LocalMaterialTag
+public class FabricMaterialTag extends LocalMaterialTag
 {
 	public static LocalMaterialTag ofString(String name)
 	{
@@ -15,10 +15,10 @@ public class PaperMaterialTag extends LocalMaterialTag
 		// If no domain was supplied, first try OTG tags.
 		if(!name.contains(":") || name.startsWith(Constants.MOD_ID_SHORT + ":"))
 		{
-			Block[] blockTag = PaperMaterials.OTG_BLOCK_TAGS.get(name.trim().toLowerCase().replace(Constants.MOD_ID_SHORT + ":", ""));
+			Block[] blockTag = FabricMaterials.OTG_BLOCK_TAGS.get(name.trim().toLowerCase().replace(Constants.MOD_ID_SHORT + ":", ""));
 			if(blockTag != null)
 			{
-				return new PaperMaterialTag(blockTag, Constants.MOD_ID_SHORT + ":" + name.trim().toLowerCase().replace(Constants.MOD_ID_SHORT + ":", ""));
+				return new FabricMaterialTag(blockTag, Constants.MOD_ID_SHORT + ":" + name.trim().toLowerCase().replace(Constants.MOD_ID_SHORT + ":", ""));
 			}
 		}
 		final ResourceLocation resourceLocation;
@@ -29,21 +29,21 @@ public class PaperMaterialTag extends LocalMaterialTag
 			return null;
 		}
 		Tag<Block> blockTag = BlockTags.getAllTags().getTag(resourceLocation);
-		return blockTag == null ? null : new PaperMaterialTag(blockTag, resourceLocation.toString());
+		return blockTag == null ? null : new FabricMaterialTag(blockTag, resourceLocation.toString());
 	}
 	
 	private final String name;
 	private final Tag<Block> blockTag;
 	private final Block[] otgBlockTag;
 
-	private PaperMaterialTag(Tag<Block> blockTag, String name)
+	private FabricMaterialTag(Tag<Block> blockTag, String name)
 	{
 		this.otgBlockTag = null;
 		this.blockTag = blockTag;
 		this.name = name;
 	}
 	
-	private PaperMaterialTag(Block[] otgBlockTag, String name)
+	private FabricMaterialTag(Block[] otgBlockTag, String name)
 	{
 		this.otgBlockTag = otgBlockTag;
 		this.blockTag = null;

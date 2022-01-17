@@ -6,8 +6,6 @@ import com.pg85.otg.util.materials.LocalMaterialTag;
 import com.pg85.otg.util.materials.MaterialProperties;
 import com.pg85.otg.util.materials.MaterialProperty;
 import net.minecraft.core.Direction;
-import net.minecraft.server.commands.data.BlockDataAccessor;
-import net.minecraft.tags.Tag;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -22,66 +20,57 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Implementation of LocalMaterial that wraps one of Minecraft's Blocks.
  */
-public class PaperMaterialData extends LocalMaterialData
+public class FabricMaterialData extends LocalMaterialData
 {
-	static final LocalMaterialData blank = new PaperMaterialData(null, null, true);
-	private static final ConcurrentHashMap<BlockState, LocalMaterialData> stateToMaterialDataMap = new ConcurrentHashMap<>(); // TODO: Move to SpigotMaterialReader?
+	static final LocalMaterialData blank = new FabricMaterialData(null, null, true);
+	private static final ConcurrentHashMap<BlockState, FabricMaterialData> stateToMaterialDataMap = new ConcurrentHashMap<>(); // TODO: Move to ForgeMaterialReader?
 
 	private final BlockState blockData;
 	private String name = null;
 
-	private PaperMaterialData(BlockState blockData, String raw)
+	private FabricMaterialData(BlockState blockData, String raw)
 	{
 		this(blockData, raw, false);
 	}
-	
-	private PaperMaterialData(BlockState blockData, String raw, boolean isBlank)
+
+	private FabricMaterialData(BlockState blockData, String raw, boolean isBlank)
 	{
 		this.blockData = blockData;
 		this.rawEntry = raw;
 		this.isBlank = isBlank;
 	}
 
-	public static LocalMaterialData ofBlockData(BlockState blockData)
+	static FabricMaterialData ofBlock(Block block, String raw)
 	{
-		return ofBlockData(blockData, null);
+		return ofBlockState(block.defaultBlockState(), raw);
 	}
 
-	public static LocalMaterialData ofBlockData(BlockState blockData, String raw)
+	public static FabricMaterialData ofBlockState(BlockState blockData)
+	{
+		return ofBlockState(blockData, null);
+	}
+	
+	static FabricMaterialData ofBlockState(BlockState blockState, String raw)
 	{
 		// Create only one LocalMaterialData object for each BlockState
-		LocalMaterialData existingData = stateToMaterialDataMap.get(blockData);
+		FabricMaterialData existingData = stateToMaterialDataMap.get(blockState);
 		if (existingData != null)
 		{
 			return existingData;
 		}
-		LocalMaterialData newData = new PaperMaterialData(blockData, raw);
-		existingData = stateToMaterialDataMap.putIfAbsent(blockData, newData);
+		FabricMaterialData newData = new FabricMaterialData(blockState, raw);
+		existingData = stateToMaterialDataMap.putIfAbsent(blockState, newData);
 		if(existingData != null)
 		{
 			return existingData;
 		}
-		return newData;		
-	}
-
-	public static LocalMaterialData ofSpigotMaterial(org.bukkit.Material type)
-	{
-		return ofBlockData(((BlockDataAccessor)type.createBlockData()).getState(), null);
+		return newData;
 	}
 
 	public BlockState internalBlock()
 	{
 		return this.blockData;
 	}
-	
-	public BlockData toSpigotBlockData()
-	{
-		if (this.blockData == null)
-		{
-			return null;
-		}
-		return CraftBlockData.fromData(this.blockData);
-	}	
 	
 	@Override
 	public String getName()
@@ -90,13 +79,13 @@ public class PaperMaterialData extends LocalMaterialData
 		{
 			return this.name;
 		}
-		if (isBlank)
+		if(this.isBlank)
 		{
-			this.name = "BLANK";
+			return "BLANK";
 		}
-		else if (this.blockData == null)
+		else if(this.blockData == null)
 		{
-			if (this.rawEntry != null)
+			if(this.rawEntry != null)
 			{
 				this.name = this.rawEntry;
 			} else {
@@ -106,34 +95,31 @@ public class PaperMaterialData extends LocalMaterialData
 			if(
 				this.blockData != this.blockData.getBlock().defaultBlockState() &&
 				(
-					// We set distance 1 when parsing minecraft:xxx_leaves, so check for default blockstate + distance 1
+					// We set distance 1 when parsing minecraft:xxx_leaves, so check for default blocksate + distance 1
 					!(this.blockData.getBlock() instanceof LeavesBlock) || this.blockData != this.blockData.getBlock().defaultBlockState().setValue(LeavesBlock.DISTANCE, 1)
 				)
 			)
 			{
-				this.name = this.blockData.toString().replace("Block{", "").replace("}", "");
+				this.name = this.blockData.toString()
+					.replace("Block{", "")
+					.replace("}", "");
 			} else {
-				this.name = getRegistryName();
+				this.name = this.blockData.getBlock().getName().toString();
 			}
-		}		
+		}
 		return this.name;
 	}
 
 	@Override
 	public String getRegistryName()
 	{
-		return this.blockData == null ? null : this.blockData.toString().substring(0, this.blockData.toString().indexOf("}")).replace("Block{", "");
+		return this.blockData == null ? null : this.blockData.getBlock().getName().toString();
 	}
 
 	@Override
 	public boolean isLiquid()
 	{
-		return
-			this.blockData != null &&
-			(
-				this.blockData.getMaterial() == Material.WATER ||
-				this.blockData.getMaterial() == Material.LAVA
-			);
+		return this.blockData != null && this.blockData.getMaterial().isLiquid();
 	}
 
 	@Override
@@ -152,8 +138,8 @@ public class PaperMaterialData extends LocalMaterialData
 	public boolean isNonCaveAir()
 	{
 		return this.blockData != null && this.blockData.getBlock() == Blocks.AIR;
-	}	
-
+	}
+	
 	@Override
 	public boolean isAir()
 	{
@@ -171,19 +157,19 @@ public class PaperMaterialData extends LocalMaterialData
 	{
 		return this.blockData != null && this.blockData.getBlock() instanceof FallingBlock;
 	}
-	
+
 	@Override
 	public boolean canSnowFallOn()
 	{
 		// Taken from SnowBlock.canSurvive
 		if(
 			this.blockData != null &&
-			!this.blockData.is(Blocks.ICE) &&
-			!this.blockData.is(Blocks.PACKED_ICE) &&
+			!this.blockData.is(Blocks.ICE) && 
+			!this.blockData.is(Blocks.PACKED_ICE) && 
 			!this.blockData.is(Blocks.BARRIER)
 		) {
 			if (
-				!this.blockData.is(Blocks.HONEY_BLOCK) &&
+				!this.blockData.is(Blocks.HONEY_BLOCK) && 
 				!this.blockData.is(Blocks.SOUL_SAND)
 			) {
 				// TODO: Vanilla checks faceFull here, we don't since it requires coords.
@@ -195,17 +181,17 @@ public class PaperMaterialData extends LocalMaterialData
 		} else {
 			return false;
 		}
-	}	
-	
+	}
+
 	@Override
 	public boolean isMaterial(LocalMaterialData material)
 	{
-		return
-			(this.isBlank && ((PaperMaterialData) material).isBlank) ||
+		return 
+			(this.isBlank && ((FabricMaterialData)material).isBlank) ||
 			(
-				!this.isBlank &&
-				!((PaperMaterialData) material).isBlank &&
-				Objects.equals(this.blockData.getBlock(), ((PaperMaterialData) material).blockData.getBlock())
+				!this.isBlank && 
+				!((FabricMaterialData)material).isBlank &&
+				Objects.equals(this.blockData.getBlock(), ((FabricMaterialData) material).internalBlock().getBlock())
 			)
 		;
 	}
@@ -221,12 +207,13 @@ public class PaperMaterialData extends LocalMaterialData
 		// Get the rotation if we haven't stored the rotation yet
 		if (rotated == null)
 		{
+			
 			BlockState state = this.blockData;
 			Collection<Property<?>> properties = state.getProperties();
 			// Loop through the blocks properties
 			for (Property<?> property : properties)
 			{
-				// Anything with a direction
+				// Anything with a direction				
 				if (property instanceof DirectionProperty)
 				{
 					Direction direction = (Direction) state.getValue(property);
@@ -263,8 +250,8 @@ public class PaperMaterialData extends LocalMaterialData
 				state = state.setValue(CrossCollisionBlock.WEST, state.getValue(CrossCollisionBlock.NORTH));
 				state = state.setValue(CrossCollisionBlock.NORTH, hasEast);
 			}
-			// Block is rotated, store a pointer to it			
-			this.rotated = PaperMaterialData.ofBlockData(state);
+			// Block is rotated, store a pointer to it
+			this.rotated = FabricMaterialData.ofBlockState(state);
 		}
 
 		if (rotateTimes > 1) {
@@ -273,7 +260,7 @@ public class PaperMaterialData extends LocalMaterialData
 
 		return this.rotated;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T extends Comparable<T>> LocalMaterialData withProperty(MaterialProperty<T> materialProperty, T value)
@@ -286,57 +273,34 @@ public class PaperMaterialData extends LocalMaterialData
 		if (materialProperty == MaterialProperties.AGE_0_25)
 		{
 			property = BlockStateProperties.AGE_25;
-		} else if (materialProperty == MaterialProperties.AGE_0_3) {
-			property = BlockStateProperties.AGE_3;
 		}
 		else if (materialProperty == MaterialProperties.PICKLES_1_4)
 		{
 			property = BlockStateProperties.PICKLES;
-		} else if (materialProperty == MaterialProperties.SNOWY)
+		}
+		else if (materialProperty == MaterialProperties.SNOWY)
 		{
 			property = BlockStateProperties.SNOWY;
-		} else if (materialProperty == MaterialProperties.HORIZONTAL_DIRECTION)
+		}
+		else if (materialProperty == MaterialProperties.HORIZONTAL_DIRECTION)
 		{
 			// Extremely ugly hack for directions
 			property = BlockStateProperties.HORIZONTAL_FACING;
 			Direction direction = Direction.values()[((OTGDirection)value).ordinal()];
-			return PaperMaterialData.ofBlockData(this.blockData.setValue(property, direction));
-		} else if (materialProperty == MaterialProperties.DIRECTION)
-		{
-			property = BlockStateProperties.FACING;
-			Direction direction = Direction.values()[((OTGDirection)value).ordinal()];
-			return PaperMaterialData.ofBlockData(this.blockData.setValue(property, direction));
+			return FabricMaterialData.ofBlockState(this.blockData.setValue(property, direction));
 		} else {
 			throw new IllegalArgumentException("Unknown property: " + materialProperty);
 		}
 
-		return PaperMaterialData.ofBlockData(this.blockData.setValue(property, finalVal));
+		return FabricMaterialData.ofBlockState(this.blockData.setValue(property, finalVal));
 	}
-	
+
 	@Override
 	public boolean isBlockTag(LocalMaterialTag tag)
 	{
-		if(this.blockData != null)
-		{
-			// Since we can't register OTG block tags for Spigot,
-			// have to use our own block tags logic.
-			// Try OTG tags, then MC tags.
-
-			PaperMaterialTag spigotTag = ((PaperMaterialTag)tag);
-			if(spigotTag.isOTGTag(this.blockData.getBlock()))
-			{
-				return true;
-			}
-			
-			Tag<Block> blockTag = spigotTag.getTag();
-			if(blockTag != null)
-			{
-				return this.blockData.is(blockTag);
-			}
-		}
-		return false;
-	}
-
+		return this.blockData == null ? false : this.blockData.is(((FabricMaterialTag)tag).getTag());
+	}	
+	
 	@Override
 	public boolean equals(Object obj)
 	{
@@ -344,20 +308,28 @@ public class PaperMaterialData extends LocalMaterialData
 		{
 			return true;
 		}
-		if (!(obj instanceof PaperMaterialData))
+		if (!(obj instanceof FabricMaterialData))
 		{
 			return false;
 		}
-		PaperMaterialData other = (PaperMaterialData) obj;
-		return
-			(this.isBlank && other.isBlank) ||
+		FabricMaterialData other = (FabricMaterialData) obj;
+		return 
+			(this.isBlank && other.isBlank) || 
 			(
-				!this.isBlank &&
+				!this.isBlank && 
 				!other.isBlank &&
-				Objects.equals(this.blockData.getBlock(), other.blockData.getBlock())
-			);
+				this.blockData.getBlock().equals(other.internalBlock().getBlock())
+			)
+		;
 	}
-
+	
+	/**
+	 * Gets the hashCode of the material, based on the block id and block data.
+	 * The hashCode must be unique, which is possible considering that there are
+	 * only 4096 * 16 possible materials.
+	 * 
+	 * @return The unique hashCode.
+	 */
 	@Override
 	public int hashCode()
 	{
@@ -375,9 +347,15 @@ public class PaperMaterialData extends LocalMaterialData
 		int i = blockData.getValue(LeavesBlock.DISTANCE);
 		if (i > 6)
 		{
-			return PaperMaterialData.ofBlockData(blockData.setValue(LeavesBlock.PERSISTENT, true));
+			if (leaveIllegalLeaves)
+				return FabricMaterialData.ofBlockState(
+					blockData.setValue(LeavesBlock.DISTANCE, 1)
+						.setValue(LeavesBlock.PERSISTENT, false));
+			return FabricMaterialData.ofBlockState(
+				blockData.setValue(LeavesBlock.PERSISTENT, true));
 		} else {
-			return PaperMaterialData.ofBlockData(blockData.setValue(LeavesBlock.PERSISTENT, false));
+			return FabricMaterialData.ofBlockState(
+				blockData.setValue(LeavesBlock.PERSISTENT, false));
 		}
 	}
 }

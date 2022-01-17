@@ -14,7 +14,7 @@ import net.minecraft.world.level.block.piston.PistonHeadBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.*;
 
-public class PaperLegacyMaterials
+public class FabricLegacyMaterials
 {
 	static BlockState fromLegacyBlockName (String oldBlockName)
 	{

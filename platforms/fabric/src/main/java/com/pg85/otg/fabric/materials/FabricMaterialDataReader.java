@@ -20,7 +20,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class PaperMaterialReader implements IMaterialReader
+public class FabricMaterialDataReader implements IMaterialReader
 {
 	// TODO: Smaller caches should be ok, only most frequently used should be cached?
 	private final FifoMap<String, LocalMaterialData> cachedMaterials = new FifoMap<>(4096);
@@ -76,7 +76,7 @@ public class PaperMaterialReader implements IMaterialReader
 			return localTag;
 		}
 
-		localTag = PaperMaterialTag.ofString(tag);
+		localTag = FabricMaterialTag.ofString(tag);
 		this.cachedTags.put(tag, localTag);	
 		return localTag;
 	}
@@ -98,7 +98,7 @@ public class PaperMaterialReader implements IMaterialReader
 		// Used in BO4's as placeholder/detector block.
 		if (input.equalsIgnoreCase("blank"))
 		{
-			return PaperMaterialData.blank;
+			return FabricMaterialData.blank;
 		}
 
 		BlockState blockState;
@@ -106,10 +106,10 @@ public class PaperMaterialReader implements IMaterialReader
 		// Try parsing as legacy block name / id
 		if (!blockNameCorrected.contains(":"))
 		{
-			blockState = PaperLegacyMaterials.fromLegacyBlockName(blockNameCorrected);
+			blockState = FabricLegacyMaterials.fromLegacyBlockName(blockNameCorrected);
 			if (blockState != null)
 			{
-				return PaperMaterialData.ofBlockData(blockState, input);
+				return FabricMaterialData.ofBlockData(blockState, input);
 			}
 			try
 			{
@@ -123,10 +123,10 @@ public class PaperMaterialReader implements IMaterialReader
 				if (fromLegacyIdName != null)
 				{
 					blockNameCorrected = fromLegacyIdName;
-					blockState = PaperLegacyMaterials.fromLegacyBlockName(blockNameCorrected);
+					blockState = FabricLegacyMaterials.fromLegacyBlockName(blockNameCorrected);
 					if (blockState != null)
 					{
-						return PaperMaterialData.ofBlockData(blockState, input);
+						return FabricMaterialData.ofBlockData(blockState, input);
 					}
 				}
 			}
@@ -148,9 +148,9 @@ public class PaperMaterialReader implements IMaterialReader
 			// For leaves, add DISTANCE 1 to make them not decay.
 			if (blockdata.getBlock() instanceof LeavesBlock)
 			{
-				return PaperMaterialData.ofBlockData(blockdata.setValue(LeavesBlock.DISTANCE, 1), input);
+				return FabricMaterialData.ofBlockData(blockdata.setValue(LeavesBlock.DISTANCE, 1), input);
 			}			
-			return PaperMaterialData.ofBlockData(blockdata, input);
+			return FabricMaterialData.ofBlockData(blockdata, input);
 		}
 
 		// Try legacy block with data (fe SAND:1 or 12:1)
@@ -167,10 +167,10 @@ public class PaperMaterialReader implements IMaterialReader
 			try
 			{
 				int data = Integer.parseInt(blockNameCorrected.substring(blockNameCorrected.indexOf(":") + 1));
-				blockState = PaperLegacyMaterials.fromLegacyBlockNameOrIdWithData(blockNameOrId, data);
+				blockState = FabricLegacyMaterials.fromLegacyBlockNameOrIdWithData(blockNameOrId, data);
 				if (blockState != null)
 				{
-					return PaperMaterialData.ofBlockData(blockState, input);
+					return FabricMaterialData.ofBlockData(blockState, input);
 				}
 				// Failed to parse data, remove. fe STONE:0 or STONE:1 -> STONE
 				blockNameCorrected = blockNameCorrected.substring(0, blockNameCorrected.indexOf(":"));
@@ -189,17 +189,17 @@ public class PaperMaterialReader implements IMaterialReader
 				// For leaves, add DISTANCE 1 to make them not decay.
 				if (block instanceof LeavesBlock)
 				{
-					return PaperMaterialData.ofBlockData(block.defaultBlockState().setValue(LeavesBlock.DISTANCE, 1), input);
+					return FabricMaterialData.ofBlockData(block.defaultBlockState().setValue(LeavesBlock.DISTANCE, 1), input);
 				}				
-				return PaperMaterialData.ofBlockData(block.defaultBlockState(), input);
+				return FabricMaterialData.ofBlockData(block.defaultBlockState(), input);
 			}
 		} catch(ResourceLocationException ignored) { }
 
 		// Try legacy name again, without data.
-		blockState = PaperLegacyMaterials.fromLegacyBlockName(blockNameCorrected.replace("minecraft:", ""));
+		blockState = FabricLegacyMaterials.fromLegacyBlockName(blockNameCorrected.replace("minecraft:", ""));
 		if (blockState != null)
 		{
-			return PaperMaterialData.ofBlockData(blockState, input);
+			return FabricMaterialData.ofBlockData(blockState, input);
 		}
 
 		if(OTG.getEngine().getLogger().getLogCategoryEnabled(LogCategory.CONFIGS))
@@ -207,6 +207,6 @@ public class PaperMaterialReader implements IMaterialReader
 			OTG.getEngine().getLogger().log(LogLevel.ERROR, LogCategory.CONFIGS, "Could not parse block: " + input + " (" + blockNameCorrected + "), substituting NOTE_BLOCK.");
 		}
 
-		return PaperMaterialData.ofBlockData(Blocks.NOTE_BLOCK.defaultBlockState(), input);
+		return FabricMaterialData.ofBlockData(Blocks.NOTE_BLOCK.defaultBlockState(), input);
 	}	
 }
