@@ -6,7 +6,7 @@ import com.pg85.otg.util.logging.LogLevel;
 import com.pg85.otg.util.logging.Logger;
 import org.apache.logging.log4j.LogManager;
 
-public class PaperLogger extends Logger
+public class FabricLogger extends Logger
 {
 	private final org.apache.logging.log4j.Logger logger = LogManager.getLogger(Constants.MOD_ID_SHORT);
 

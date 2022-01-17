@@ -3,6 +3,10 @@ package com.pg85.otg.fabric;
 import com.pg85.otg.constants.Constants;
 import com.pg85.otg.core.OTGEngine;
 import com.pg85.otg.fabric.gen.OTGNoiseChunkGenerator;
+import com.pg85.otg.fabric.materials.FabricMaterials;
+import com.pg85.otg.fabric.util.FabricLogger;
+import com.pg85.otg.fabric.util.FabricModLoadedChecker;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.WritableRegistry;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.world.level.LevelAccessor;
@@ -16,12 +20,12 @@ import java.nio.file.Paths;
 
 public class FabricEngine extends OTGEngine
 {
-	public ForgeEngine()
+	public FabricEngine()
 	{
 		super(
-				new ForgeLogger(),
-				Paths.get(FMLLoader.getGamePath().toString(), File.separator + "config" + File.separator + Constants.MOD_ID),
-				new ForgeModLoadedChecker(),
+				new FabricLogger(),
+				Paths.get(FabricLoader.getInstance().getGameDir().toString(), File.separator + "config" + File.separator + Constants.MOD_ID),
+				new FabricModLoadedChecker(),
 				new ForgePresetLoader(Paths.get(FMLLoader.getGamePath().toString(), File.separator + "config" + File.separator + Constants.MOD_ID))
 		);
 	}
@@ -29,7 +33,7 @@ public class FabricEngine extends OTGEngine
 	@Override
 	public void onStart()
 	{
-		ForgeMaterials.init();
+		FabricMaterials.init();
 		super.onStart();
 	}
 
